@@ -24,7 +24,9 @@ $PY publish_web.py "$@"
 
 # The generated page only changes when the template does, so committing it is
 # usually a no-op. The course data never lands here — it is in the blob.
-if ! git -C ../website diff --quiet -- study.html 2>/dev/null; then
+# --porcelain, not `git diff`: study.html may be untracked, which `git diff`
+# reports as no change.
+if [ -n "$(git -C ../website status --porcelain -- study.html)" ]; then
   echo "   study.html changed — committing to the website repo"
   git -C ../website add study.html
   git -C ../website commit -q -m "Update /study dashboard page"
