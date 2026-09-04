@@ -1,35 +1,51 @@
-# School
+# study
 
-Coursework, synced from Canvas (UBC). Driven by the `school` skill.
+Term dashboard for UBC coursework, built from Canvas.
 
-UBC has **disabled student Canvas API tokens**, so there is no API key here.
-Two token-free paths replace it:
+Live: **https://geoffreybian.github.io/study/**
 
-1. **ICS calendar feed** (`sync_ics.py`) — a permanent, unauthenticated URL that
-   carries every dated assignment. No browser needed, works from cron.
-2. **Browser-session API** (`ingest.py`) — Canvas's REST API answers normally to
-   a logged-in browser session, so the Chrome tools can pull points, submission
-   status, scores, rubrics and files. Needs Chrome open and signed in.
+UBC disables student Canvas API tokens, so this pulls from two token-free
+sources instead:
+
+- **`sync_ics.py`** — the Canvas calendar feed, which needs no authentication
+  and carries every dated assignment. No browser, cron-safe. The default path.
+- **`ingest.py`** — Canvas's REST API answers normally to a logged-in browser
+  session, which fills in points, submission status and scores.
+
+`build_dashboard.py` renders `tracker.csv` + `todos.csv` + `courses.json` into
+the page: an overview with the next deadlines and a to-do list, plus a page per
+course showing what's currently being covered.
+
+## Two builds
+
+`build_dashboard.py --public` drops every course not flagged `"public": true`
+in `courses.json`, and `check_public.py` refuses to publish if anything from a
+private course reaches `docs/index.html`. Only the redacted build is committed;
+the full one stays local.
 
 ```
-school/
-  .env                 # CANVAS_ICS_URL (secret, gitignored, chmod 600)
-  courses.json         # canvas course id -> local slug
-  tracker.py           # shared tracker.csv load/merge
-  sync_ics.py          # feed  -> tracker.csv
-  ingest.py            # browser JSON dump -> tracker.csv
-  due.py               # what's due / overdue
-  tracker.csv          # every assignment/exam across courses
-  cache/               # browser JSON dumps (gitignored)
-  courses/<slug>/
-    course.md          # canvas id, instructors, grading breakdown, how it's graded
-    syllabus.md
-    assignments/<slug>/
-    notes/  materials/  exams/
+./publish.sh          # sync, rebuild both, leak-scan, push
 ```
 
-Both syncs are idempotent and converge — running either repeatedly reports
-"no changes".
+## Setup
 
-Add a course: create `courses/<slug>/`, add its Canvas id to `courses.json`,
-re-run `sync_ics.py`.
+```bash
+cp courses.example.json courses.json     # your courses, Canvas ids, roles
+echo 'CANVAS_ICS_URL=<your feed>' > .env  # Canvas > Calendar > Calendar Feed
+python3 sync_ics.py && python3 due.py
+```
+
+The feed URL is a bearer secret — anyone holding it can read your whole
+calendar. It stays in `.env`, which is gitignored.
+
+## Notes
+
+Two things that bite:
+
+- Canvas due times are UTC. `America/Vancouver` tzdata is broken on some
+  machines (it stops observing DST and reports MST), which pushes winter
+  deadlines an hour late; `tracker.PACIFIC` pins `America/Los_Angeles` and
+  asserts a known winter timestamp at import.
+- The calendar feed's UID is an *assignment override* id while the REST API
+  returns the *assignment* id, so rows key on course plus normalized title, not
+  on the Canvas id.
