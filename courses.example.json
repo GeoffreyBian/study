@@ -1,0 +1,21 @@
+{
+  "example-course": {
+    "name": "Course Name",
+    "code": "DEPT 123",
+    "role": "student",
+    "term": "2026W1",
+    "canvas": {"123456": ""},
+    "staff": ["Instructor Name"],
+    "public": true
+  },
+  "example-course-you-ta": {
+    "name": "Another Course",
+    "code": "DEPT 456",
+    "role": "ta",
+    "term": "2026W1",
+    "canvas": {"123457": "A", "123458": "B"},
+    "students": {"123457": 100, "123458": 80},
+    "staff": ["Instructor Name"],
+    "public": false
+  }
+}

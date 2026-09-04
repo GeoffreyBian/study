@@ -1,0 +1,405 @@
+<title>Term Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F4F6F9; --surface:#FFFFFF; --sunk:#EDF1F6;
+  --ink:#0C1826; --ink-2:#3D4F66; --muted:#69798F; --line:#D9E1EB; --line-2:#E7EDF4;
+  --navy:#002145; --accent:#0B5CAB;
+  --study:#0B5CAB; --study-bg:#E7F0FA;
+  --teach:#A2661C; --teach-bg:#FAF0E1;
+  --crit:#A82018; --crit-bg:#FBEAE8;
+  --warn:#8A5B00; --warn-bg:#FAF1DF;
+  --ok:#1B6844; --ok-bg:#E4F2EA;
+  --shadow:0 1px 2px rgba(12,24,38,.06),0 6px 20px -12px rgba(12,24,38,.18);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --serif:"Spectral",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B1220; --surface:#131C2B; --sunk:#0E1725;
+  --ink:#E9EFF7; --ink-2:#B6C4D6; --muted:#8296AE; --line:#26344A; --line-2:#1D2A3D;
+  --navy:#8FB6E6; --accent:#7FB2EE;
+  --study:#7FB2EE; --study-bg:#152539;
+  --teach:#DFA660; --teach-bg:#2E2213;
+  --crit:#F0938A; --crit-bg:#331917;
+  --warn:#E0B160; --warn-bg:#2C2312;
+  --ok:#79CFA4; --ok-bg:#122A1F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.7);
+}}
+:root[data-theme="dark"]{
+  --ground:#0B1220; --surface:#131C2B; --sunk:#0E1725;
+  --ink:#E9EFF7; --ink-2:#B6C4D6; --muted:#8296AE; --line:#26344A; --line-2:#1D2A3D;
+  --navy:#8FB6E6; --accent:#7FB2EE;
+  --study:#7FB2EE; --study-bg:#152539;
+  --teach:#DFA660; --teach-bg:#2E2213;
+  --crit:#F0938A; --crit-bg:#331917;
+  --warn:#E0B160; --warn-bg:#2C2312;
+  --ok:#79CFA4; --ok-bg:#122A1F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--serif);font-weight:600;text-wrap:balance;margin:0}
+a{color:var(--accent)}
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);gap:0;min-height:100vh}
+/* rail */
+.rail{background:var(--surface);border-right:1px solid var(--line);
+  padding:22px 16px;display:flex;flex-direction:column;gap:22px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand b{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:-.01em}
+.brand span{font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+nav{display:flex;flex-direction:column;gap:2px}
+nav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;
+  color:var(--ink-2);text-decoration:none;font-size:14px;font-weight:500}
+nav a:hover{background:var(--sunk);color:var(--ink)}
+nav a.on{background:var(--navy);color:#fff}
+:root[data-theme="dark"] nav a.on,:root:not([data-theme="light"]) nav a.on{color:#0B1220}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) nav a.on{color:#fff}}
+nav a .dot{width:7px;height:7px;border-radius:50%;flex:none}
+nav a .ct{margin-left:auto;font-family:var(--mono);font-size:11px;opacity:.75}
+.rail .foot{margin-top:auto;font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.6}
+/* main */
+main{padding:30px 34px 64px;max-width:1080px}
+.head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:6px}
+.head h1{font-size:29px;letter-spacing:-.015em}
+.sub{color:var(--muted);font-size:14px;margin:4px 0 26px}
+.role{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  padding:4px 9px;border-radius:5px;font-weight:500;white-space:nowrap}
+.role.student{background:var(--study-bg);color:var(--study)}
+.role.ta{background:var(--teach-bg);color:var(--teach)}
+section{margin-bottom:34px}
+.lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:11px;display:flex;align-items:center;gap:9px}
+.lbl::after{content:"";flex:1;height:1px;background:var(--line-2)}
+/* deadline strip */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:11px}
+.dl{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:14px 15px;display:flex;flex-direction:column;gap:7px;box-shadow:var(--shadow)}
+.dl.is-crit{border-color:var(--crit);background:var(--crit-bg)}
+.dl.is-warn{border-left:3px solid var(--warn)}
+.dl .when{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+  display:flex;justify-content:space-between;gap:8px}
+.dl .cd{font-weight:600;color:var(--ink)}
+.dl .t{font-size:15px;font-weight:600;line-height:1.35}
+.dl .meta{font-family:var(--mono);font-size:11px;color:var(--muted)}
+/* todo */
+ul.todo{list-style:none;margin:0;padding:0;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+ul.todo li{display:flex;gap:12px;padding:12px 15px;border-top:1px solid var(--line-2);align-items:flex-start}
+ul.todo li:first-child{border-top:0}
+ul.todo li.done .tx{text-decoration:line-through;color:var(--muted)}
+.box{appearance:none;width:17px;height:17px;flex:none;margin-top:2px;border:1.5px solid var(--line);
+  border-radius:5px;background:var(--surface);cursor:pointer;position:relative}
+.box:hover{border-color:var(--accent)}
+.box:checked{background:var(--accent);border-color:var(--accent)}
+.box:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:4px;height:9px;
+  border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(42deg)}
+.box:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tx{flex:1;min-width:0}
+.tx b{font-weight:600;font-size:14.5px;display:block}
+.tx small{color:var(--muted);font-size:12.5px;display:block;margin-top:2px}
+.pri{font-family:var(--mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;flex:none;margin-top:1px}
+.pri.high{background:var(--crit-bg);color:var(--crit)}
+.pri.med{background:var(--sunk);color:var(--muted)}
+.pri.low{background:var(--sunk);color:var(--muted)}
+.tag{font-family:var(--mono);font-size:10.5px;color:var(--muted);flex:none;margin-top:3px}
+/* course cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:18px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:11px;text-decoration:none;color:inherit}
+.card:hover{border-color:var(--accent)}
+.card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card h3{font-size:19px}
+.card .code{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:2px}
+.card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px}
+.card dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);align-self:center}
+.card dd{margin:0;font-weight:500}
+/* coverage */
+.cov{display:flex;flex-direction:column;gap:0;background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.mod{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:14px 16px;border-top:1px solid var(--line-2)}
+.mod:first-child{border-top:0}
+.mod.current{background:var(--study-bg)}
+.mod .num{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.mod.current .num{color:var(--study);font-weight:500}
+.mod h4{margin:0;font-size:15px;font-weight:600;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.state{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px}
+.state.current{background:var(--study);color:var(--surface)}
+.state.done{background:var(--ok-bg);color:var(--ok)}
+.state.ahead{background:var(--sunk);color:var(--muted)}
+.state.reference{background:var(--sunk);color:var(--muted)}
+.mod ol{margin:8px 0 0;padding-left:17px;color:var(--ink-2);font-size:13.5px;
+  display:flex;flex-direction:column;gap:3px}
+.mod.ahead ol,.mod.reference ol{color:var(--muted)}
+/* table */
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-weight:500}
+td{padding:11px 14px;border-top:1px solid var(--line-2);vertical-align:top}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.closed td{color:var(--muted)}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;white-space:nowrap}
+.pill.unsubmitted{background:var(--sunk);color:var(--muted)}
+.pill.in-progress{background:var(--warn-bg);color:var(--warn)}
+.pill.submitted,.pill.graded{background:var(--ok-bg);color:var(--ok)}
+/* notice */
+.notice{background:var(--warn-bg);border:1px solid var(--warn);border-left-width:3px;
+  border-radius:9px;padding:14px 16px;font-size:14px;color:var(--ink)}
+.notice b{font-weight:600}
+.empty{color:var(--muted);font-size:14px;padding:16px;background:var(--surface);
+  border:1px dashed var(--line);border-radius:10px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:9px}
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;flex-direction:row;align-items:center;flex-wrap:wrap;gap:14px;
+    border-right:0;border-bottom:1px solid var(--line)}
+  .rail nav{flex-direction:row;flex-wrap:wrap}
+  .rail .foot{display:none}
+  main{padding:22px 18px 50px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand"><b>Term Board</b><span id="term">2026W1</span></div>
+    <nav id="nav"></nav>
+    <div class="foot">Built <span id="gen"></span><br>Canvas via feed + session</div>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<script id="payload" type="application/json">{"generated": "Sep 3, 2026 at 6:08 PM", "courses": [{"slug": "new-venture-design", "name": "New Venture Design", "code": "COMM 466 / APSC 486", "role": "student", "term": "2026W1", "staff": ["Purang Abolmaesumi", "Terry Lee", "Fraser Pogue"], "sections": [{"label": "\u2014", "id": "190640", "students": null}], "note": "", "weights_published": false, "groups": ["Individual Assignments", "Group Assignments", "Peer Assessments", "Tech Reviews"], "modules": [{"n": 1, "name": "Student Guides", "items": ["NVD-Syllabus-2026-27.pdf", "UBC Resources for Entrepreneurs", "Group Formation", "Curated Problem List", "Competitions and Events", "Prototyping Facilities & Lockers", "Funding (Budget for NVD Team Projects)", "Additional Information for MECH Students", "Additional Information for ECE Students", "Customer Discovery"], "state": "reference"}, {"n": 2, "name": "Group Formation Classes (1, 2 & 3)", "items": ["Class 1 - Introduction to NVD", "Student Profiles - Section 001", "Idea Pitch - Section 001", "Class 2 - DITL & VP Canvas (Jobs, Pains, Gains)", "Class 02 - Class Slides.pdf", "Class 3 - Business Model Canvas & Lean Methodology", "Research Ethics"], "state": "current"}, {"n": 3, "name": "Ideation Classes (4, 5 & 6)", "items": ["Class 4 - Lab 1 (Three Lead Ideas), & Team Charter", "Three Lead Ideas (Lab 1)", "Team Charter", "Class 5 - Tech Foundations", "Class 6- Primary & Secondary Market Research"], "state": "ahead"}, {"n": 4, "name": "Lesson 05: Safety", "items": [], "state": "reference"}], "items": [{"id": "new-venture-design-idea-pitch", "course": "new-venture-design", "title": "Idea Pitch", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527220", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}, {"id": "new-venture-design-student-profiles", "course": "new-venture-design", "title": "Student Profiles", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527221", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}, {"id": "new-venture-design-research-ethics", "course": "new-venture-design", "title": "Research Ethics", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527233", "status": "unsubmitted", "open": true, "days": 18, "overdue": false, "iso": "2026-09-22T18:00:00-07:00", "label": "Tue Sep 22", "day": "Sep 22", "time": "6:00 pm"}, {"id": "new-venture-design-three-lead-ideas-lab-1", "course": "new-venture-design", "title": "Three Lead Ideas (Lab 1)", "type": "assignment", "points": "8", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527244", "status": "unsubmitted", "open": true, "days": 25, "overdue": false, "iso": "2026-09-29T18:00:00-07:00", "label": "Tue Sep 29", "day": "Sep 29", "time": "6:00 pm"}, {"id": "new-venture-design-team-charter", "course": "new-venture-design", "title": "Team Charter", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527234", "status": "unsubmitted", "open": true, "days": 39, "overdue": false, "iso": "2026-10-13T18:00:00-07:00", "label": "Tue Oct 13", "day": "Oct 13", "time": "6:00 pm"}, {"id": "new-venture-design-peer-assessment-1", "course": "new-venture-design", "title": "Peer Assessment 1", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527230", "status": "unsubmitted", "open": true, "days": 71, "overdue": false, "iso": "2026-11-13T23:59:00-08:00", "label": "Fri Nov 13", "day": "Nov 13", "time": "11:59 pm"}, {"id": "new-venture-design-peer-assessment-2", "course": "new-venture-design", "title": "Peer Assessment 2", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527231", "status": "unsubmitted", "open": true, "days": 142, "overdue": false, "iso": "2027-01-23T23:59:00-08:00", "label": "Sat Jan 23", "day": "Jan 23", "time": "11:59 pm"}, {"id": "new-venture-design-peer-assessment-3", "course": "new-venture-design", "title": "Peer Assessment 3", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527232", "status": "unsubmitted", "open": true, "days": 215, "overdue": false, "iso": "2027-04-06T23:59:00-07:00", "label": "Tue Apr 6", "day": "Apr 6", "time": "11:59 pm"}], "todos": [{"id": "new-venture-design-read-nvd-syllabus-2026-27-pdf-and-fill-in-the-gradi", "course": "new-venture-design", "title": "Read NVD-Syllabus-2026-27.pdf and fill in the grading breakdown", "priority": "high", "notes": "Canvas assignment groups all show weight 0 so the real weights are only in this PDF", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}, {"id": "new-venture-design-prepare-60s-idea-pitch-one-slide-pdf", "course": "new-venture-design", "title": "Prepare 60s Idea Pitch + one-slide PDF", "priority": "high", "notes": "Graded partly on novelty. Post the slide as an embedded image not an attachment", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}, {"id": "new-venture-design-write-student-profiles-post", "course": "new-venture-design", "title": "Write Student Profiles post", "priority": "high", "notes": "", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}], "open_count": 8, "next": {"id": "new-venture-design-idea-pitch", "course": "new-venture-design", "title": "Idea Pitch", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527220", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}}], "items": [{"id": "new-venture-design-idea-pitch", "course": "new-venture-design", "title": "Idea Pitch", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527220", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}, {"id": "new-venture-design-student-profiles", "course": "new-venture-design", "title": "Student Profiles", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527221", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}, {"id": "new-venture-design-research-ethics", "course": "new-venture-design", "title": "Research Ethics", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527233", "status": "unsubmitted", "open": true, "days": 18, "overdue": false, "iso": "2026-09-22T18:00:00-07:00", "label": "Tue Sep 22", "day": "Sep 22", "time": "6:00 pm"}, {"id": "new-venture-design-three-lead-ideas-lab-1", "course": "new-venture-design", "title": "Three Lead Ideas (Lab 1)", "type": "assignment", "points": "8", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527244", "status": "unsubmitted", "open": true, "days": 25, "overdue": false, "iso": "2026-09-29T18:00:00-07:00", "label": "Tue Sep 29", "day": "Sep 29", "time": "6:00 pm"}, {"id": "new-venture-design-team-charter", "course": "new-venture-design", "title": "Team Charter", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527234", "status": "unsubmitted", "open": true, "days": 39, "overdue": false, "iso": "2026-10-13T18:00:00-07:00", "label": "Tue Oct 13", "day": "Oct 13", "time": "6:00 pm"}, {"id": "new-venture-design-peer-assessment-1", "course": "new-venture-design", "title": "Peer Assessment 1", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527230", "status": "unsubmitted", "open": true, "days": 71, "overdue": false, "iso": "2026-11-13T23:59:00-08:00", "label": "Fri Nov 13", "day": "Nov 13", "time": "11:59 pm"}, {"id": "new-venture-design-peer-assessment-2", "course": "new-venture-design", "title": "Peer Assessment 2", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527231", "status": "unsubmitted", "open": true, "days": 142, "overdue": false, "iso": "2027-01-23T23:59:00-08:00", "label": "Sat Jan 23", "day": "Jan 23", "time": "11:59 pm"}, {"id": "new-venture-design-peer-assessment-3", "course": "new-venture-design", "title": "Peer Assessment 3", "type": "assignment", "points": "0", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527232", "status": "unsubmitted", "open": true, "days": 215, "overdue": false, "iso": "2027-04-06T23:59:00-07:00", "label": "Tue Apr 6", "day": "Apr 6", "time": "11:59 pm"}], "todos": [{"id": "new-venture-design-read-nvd-syllabus-2026-27-pdf-and-fill-in-the-gradi", "course": "new-venture-design", "title": "Read NVD-Syllabus-2026-27.pdf and fill in the grading breakdown", "priority": "high", "notes": "Canvas assignment groups all show weight 0 so the real weights are only in this PDF", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}, {"id": "new-venture-design-prepare-60s-idea-pitch-one-slide-pdf", "course": "new-venture-design", "title": "Prepare 60s Idea Pitch + one-slide PDF", "priority": "high", "notes": "Graded partly on novelty. Post the slide as an embedded image not an attachment", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}, {"id": "new-venture-design-write-student-profiles-post", "course": "new-venture-design", "title": "Write Student Profiles post", "priority": "high", "notes": "", "days": 4, "iso": "2026-09-08T16:59:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "4:59 pm"}], "overdue": [], "soon": [{"id": "new-venture-design-idea-pitch", "course": "new-venture-design", "title": "Idea Pitch", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527220", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}, {"id": "new-venture-design-student-profiles", "course": "new-venture-design", "title": "Student Profiles", "type": "assignment", "points": "1", "url": "https://canvas.ubc.ca/courses/190640/assignments/2527221", "status": "unsubmitted", "open": true, "days": 4, "overdue": false, "iso": "2026-09-08T18:00:00-07:00", "label": "Tue Sep 8", "day": "Sep 8", "time": "6:00 pm"}]}</script>
+<script>
+const D = JSON.parse(document.getElementById("payload").textContent);
+const $ = (h) => { const t = document.createElement("template"); t.innerHTML = h.trim(); return t.content; };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ROLE = { student: "Taking", ta: "Teaching" };
+
+/* ---- tick state ----
+   This page is served from two places: as a Claude artifact, where `db` keeps
+   ticks server-side and Claude can read them back, and as a static page on
+   GitHub Pages, where there is no `claude` global at all. localStorage is the
+   layer that always works; db, when present, is authoritative over it. */
+let ticks = {}, db = null, render = () => {};
+const STORE = "school.ticks.v1";
+
+function loadLocal() {
+  try { ticks = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; }
+  catch (e) { ticks = {}; }        // private window, blocked storage: start empty
+}
+function saveLocal() {
+  try { localStorage.setItem(STORE, JSON.stringify(ticks)); } catch (e) {}
+}
+
+async function initDb() {
+  // On a static host `claude` is undefined; touching it would throw and kill
+  // the rest of the script, so check before reaching for it.
+  if (typeof claude === "undefined" || typeof claude.use !== "function") return;
+  db = await claude.use("db");                 // null when unavailable by design
+  if (!db) return;
+  db.collection("ticks").onSnapshot(
+    (snap) => {
+      ticks = {};
+      snap.docs.forEach(d => { ticks[d.id] = d.data().done; });
+      saveLocal(); render();
+    },
+    () => { db = null; }                        // subscription dead: stay local
+  );
+}
+async function setTick(id, done) {
+  ticks[id] = done; saveLocal(); render();
+  if (!db) return;
+  try { await db.doc("ticks/" + id).set({ done, at: new Date().toISOString() }); }
+  catch (e) { /* keep the optimistic state; the page still works */ }
+}
+
+/* ---- pieces ---- */
+function countdown(d) {
+  if (d === null || d === undefined) return "";
+  if (d < 0) return `${-d}d overdue`;
+  if (d === 0) return "today";
+  if (d === 1) return "tomorrow";
+  return `in ${d}d`;
+}
+function deadlineCard(i) {
+  const cls = i.overdue ? "is-crit" : (i.days !== null && i.days <= 7 ? "is-warn" : "");
+  const pts = Number(i.points) > 0 ? ` · ${i.points} pt` : "";
+  const course = D.courses.find(c => c.slug === i.course);
+  return `<div class="dl ${cls}">
+    <div class="when"><span>${esc(i.label)}${i.time ? " · " + esc(i.time) : ""}</span>
+      <span class="cd">${esc(countdown(i.days))}</span></div>
+    <div class="t">${esc(i.title)}</div>
+    <div class="meta">${esc(course ? course.code : i.course)}${pts}</div>
+  </div>`;
+}
+function todoList(list, showCourse) {
+  if (!list.length) return `<div class="empty">Nothing queued.</div>`;
+  return `<ul class="todo">` + list.map(t => {
+    const done = !!ticks[t.id];
+    const course = D.courses.find(c => c.slug === t.course);
+    return `<li class="${done ? "done" : ""}">
+      <input class="box" type="checkbox" data-tick="${esc(t.id)}" ${done ? "checked" : ""}
+             aria-label="${esc(t.title)}">
+      <span class="tx"><b>${esc(t.title)}</b>
+        ${t.notes ? `<small>${esc(t.notes)}</small>` : ""}</span>
+      ${showCourse && course ? `<span class="tag">${esc(course.code)}</span>` : ""}
+      ${t.label && t.iso ? `<span class="tag">${esc(t.day)}</span>` : ""}
+      <span class="pri ${esc(t.priority)}">${esc(t.priority)}</span>
+    </li>`;
+  }).join("") + `</ul>`;
+}
+function itemsTable(items) {
+  if (!items.length) return `<div class="empty">No deliverables in Canvas yet.</div>`;
+  return `<div class="wrap"><table><thead><tr>
+    <th>Deliverable</th><th>Due</th><th>Countdown</th><th>Points</th><th>Status</th>
+    </tr></thead><tbody>` + items.map(i => `<tr class="${i.open ? "" : "closed"}">
+      <td>${i.url ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a>`
+                  : esc(i.title)}</td>
+      <td class="num">${esc(i.label)}${i.time ? `<br><span style="color:var(--muted)">${esc(i.time)}</span>` : ""}</td>
+      <td class="num">${esc(countdown(i.days))}</td>
+      <td class="num">${Number(i.points) > 0 ? esc(i.points) : "—"}</td>
+      <td><span class="pill ${esc(i.status || "unsubmitted")}">${esc(i.status || "unsubmitted")}</span></td>
+    </tr>`).join("") + `</tbody></table></div>`;
+}
+
+/* ---- pages ---- */
+function overview() {
+  const openTodos = D.todos.filter(t => !ticks[t.id]);
+  const upcoming = D.items.filter(i => i.open).slice(0, 4);
+  return `
+  <div class="head"><h1>This term</h1></div>
+  <p class="sub">${D.courses.length} active courses · ${D.items.filter(i => i.open).length} open deliverables
+     · ${openTodos.length} things to do</p>
+
+  <section>
+    <div class="lbl">Next up</div>
+    ${upcoming.length ? `<div class="strip">${upcoming.map(deadlineCard).join("")}</div>`
+                      : `<div class="empty">Nothing scheduled.</div>`}
+  </section>
+
+  <section>
+    <div class="lbl">To do</div>
+    ${todoList(D.todos, true)}
+    <p class="hint">Ticks persist in this browser, and on the Claude version they sync so Claude can read them back.</p>
+  </section>
+
+  <section>
+    <div class="lbl">Courses</div>
+    <div class="cards">${D.courses.map(c => `
+      <a class="card" href="#/${esc(c.slug)}" data-slug="${esc(c.slug)}">
+        <div class="top">
+          <div><h3>${esc(c.name)}</h3><div class="code">${esc(c.code)}</div></div>
+          <span class="role ${esc(c.role)}">${esc(ROLE[c.role] || c.role)}</span>
+        </div>
+        <dl>
+          <dt>Now</dt><dd>${esc((c.modules.find(m => m.state === "current") || {}).name || "Not started")}</dd>
+          <dt>Next</dt><dd>${c.next ? esc(c.next.title) + " · " + esc(countdown(c.next.days))
+                                    : "Nothing scheduled"}</dd>
+          <dt>${c.role === "ta" ? "Students" : "Open"}</dt>
+          <dd>${c.role === "ta"
+                ? c.sections.reduce((n, s) => n + (s.students || 0), 0) + " across " + c.sections.length + " sections"
+                : c.open_count + " deliverables"}</dd>
+        </dl>
+      </a>`).join("")}</div>
+  </section>`;
+}
+
+function coursePage(c) {
+  const teaching = c.role === "ta";
+  return `
+  <div class="head"><h1>${esc(c.name)}</h1><span class="role ${esc(c.role)}">${esc(ROLE[c.role])}</span></div>
+  <p class="sub">${esc(c.code)} · ${esc(c.term)}${c.staff.length ? " · " + esc(c.staff.join(", ")) : ""}</p>
+
+  ${c.note ? `<section><div class="notice"><b>Not open yet.</b> ${esc(c.note)}</div></section>` : ""}
+
+  ${teaching ? `<section>
+    <div class="lbl">Sections</div>
+    <div class="cards">${c.sections.map(s => `<div class="card">
+      <div class="top"><div><h3>Section ${esc(s.label)}</h3>
+        <div class="code">Canvas ${esc(s.id)}</div></div></div>
+      <dl><dt>Students</dt><dd>${s.students != null ? esc(s.students) : "—"}</dd>
+          <dt>To grade</dt><dd>Nothing yet</dd></dl>
+    </div>`).join("")}</div>
+  </section>` : ""}
+
+  ${c.modules.length ? `<section>
+    <div class="lbl">${teaching ? "Course outline" : "What's being covered"}</div>
+    <div class="cov">${c.modules.map(m => `
+      <div class="mod ${esc(m.state)}">
+        <div class="num">${m.state === "reference" ? "—" : String(m.n).padStart(2, "0")}</div>
+        <div>
+          <h4>${esc(m.name)}<span class="state ${esc(m.state)}">${
+            m.state === "current" ? "Now" : m.state === "done" ? "Covered"
+            : m.state === "reference" ? "Reference" : "Upcoming"}</span></h4>
+          ${m.items.length ? `<ol>${m.items.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+        </div>
+      </div>`).join("")}</div>
+  </section>` : ""}
+
+  ${!teaching ? `<section>
+    <div class="lbl">Deliverables</div>
+    ${itemsTable(c.items)}
+    ${c.weights_published === false ? `<p class="hint">Canvas shows every assignment group at
+      weight 0, so the real grading breakdown is only in the syllabus PDF. A 0-point item here is
+      participation or ungraded, not worthless.</p>` : ""}
+  </section>` : ""}
+
+  <section>
+    <div class="lbl">To do</div>
+    ${todoList(c.todos, false)}
+  </section>`;
+}
+
+/* ---- routing ----
+   The artifact runs in a sandboxed frame where hash navigation does not reach
+   the page, so the route is in-page state. The hash is still written as a
+   best-effort bookmark, never read back as the source of truth. */
+let current = "";
+function route() {
+  const course = D.courses.find(c => c.slug === current);
+  document.getElementById("view").innerHTML = course ? coursePage(course) : overview();
+  document.querySelectorAll("#nav a").forEach(a =>
+    a.classList.toggle("on", (a.dataset.slug || "") === current));
+  scrollTo(0, 0);
+}
+function go(slug) {
+  current = slug || "";
+  try { history.replaceState(null, "", current ? "#/" + current : "#/"); } catch (e) {}
+  route();
+}
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("[data-slug]");
+  if (!link) return;
+  e.preventDefault();
+  go(link.dataset.slug);
+});
+render = route;
+
+document.getElementById("nav").innerHTML =
+  `<a href="#/" data-slug=""><span class="dot" style="background:var(--navy)"></span>Overview
+     <span class="ct">${D.todos.length}</span></a>` +
+  D.courses.map(c => `<a href="#/${esc(c.slug)}" data-slug="${esc(c.slug)}">
+     <span class="dot" style="background:var(--${c.role === "ta" ? "teach" : "study"})"></span>
+     ${esc(c.code)}<span class="ct">${c.role === "ta" ? "TA" : c.open_count}</span></a>`).join("");
+document.getElementById("gen").textContent = D.generated;
+document.getElementById("term").textContent = (D.courses[0] || {}).term || "";
+
+document.addEventListener("change", (e) => {
+  const id = e.target.dataset && e.target.dataset.tick;
+  if (id) setTick(id, e.target.checked);
+});
+loadLocal();
+route();
+initDb();
+</script>
