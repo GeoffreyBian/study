@@ -1,44 +1,49 @@
 #!/usr/bin/env bash
-# Sync, rebuild both dashboards, and push the public one live.
+# Sync Canvas, rebuild the term board, and publish it everywhere it lives.
 #
-#   docs/index.html  -> geoffreybian.github.io/study   (public, redacted)
-#   dashboard.html   -> the Claude artifact             (private, everything)
+#   geoffreybian.github.io/study   encrypted blob + page in the website repo
+#   Claude artifact                the same board, inline, for reading back ticks
 #
-# Mirrors ~/dev/garmin/refresh.sh, which does the same for /train.
+# Mirrors ~/dev/stocks/scripts/publish_web_dashboard.py, which does the same
+# for /portfolio.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
+PY=./.venv/bin/python
+[ -x "$PY" ] || PY=python3
 
 echo "==> Syncing deadlines from the Canvas feed"
-python3 sync_ics.py
+$PY sync_ics.py
 
 echo
-echo "==> Rebuilding dashboards"
-python3 build_dashboard.py            # full, for the artifact
-python3 build_dashboard.py --public   # redacted, for GitHub Pages
+echo "==> Rebuilding the board"
+$PY build_dashboard.py
 
 echo
-echo "==> Leak scan"
-# Hard gate. A course without "public": true in courses.json must not reach
-# docs/index.html; this aborts the push rather than publishing it.
-python3 check_public.py
+echo "==> Encrypting and publishing to the website"
+$PY publish_web.py "$@"
+
+# The generated page only changes when the template does, so committing it is
+# usually a no-op. The course data never lands here — it is in the blob.
+if ! git -C ../website diff --quiet -- study.html 2>/dev/null; then
+  echo "   study.html changed — committing to the website repo"
+  git -C ../website add study.html
+  git -C ../website commit -q -m "Update /study dashboard page"
+  git -C ../website push -q && echo "   pushed"
+fi
 
 echo
-echo "==> Publishing"
-if ! git rev-parse --git-dir >/dev/null 2>&1; then
-  echo "   not a git repo yet — skipping push"
-elif ! git remote get-url origin >/dev/null 2>&1; then
-  echo "   no 'origin' remote — skipping push"
-elif git diff --quiet HEAD -- docs/index.html 2>/dev/null; then
-  echo "   docs/index.html unchanged — nothing to push"
+echo "==> Code repo"
+if git diff --quiet HEAD 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+  echo "   no code changes"
 else
   git add -A
-  git commit -q -m "Refresh dashboard $(date +%Y-%m-%d)" || true
-  git push -q origin HEAD && echo "   pushed — live at https://geoffreybian.github.io/study/"
+  git commit -q -m "Refresh $(date +%Y-%m-%d)" || true
+  git push -q origin HEAD 2>/dev/null && echo "   pushed" || echo "   nothing to push"
 fi
 
 if [ -f insights/ARTIFACT.txt ]; then
   echo
-  echo "Claude version (has CPEN 221): republish dashboard.html to"
+  echo "Claude artifact: republish dashboard.html to"
   echo "  $(cat insights/ARTIFACT.txt)"
   echo "Reuse that URL, or you get a second artifact and lose the saved ticks."
 fi

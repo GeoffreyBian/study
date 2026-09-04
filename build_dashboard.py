@@ -4,7 +4,6 @@
 Never hand-edit dashboard.html; it is regenerated every build. Edit
 dashboard.template.html. The build fails loudly if a {{token}} goes unfilled.
 """
-import argparse
 import csv
 import json
 import re
@@ -16,7 +15,6 @@ import tracker
 ROOT = Path(__file__).parent
 TEMPLATE = ROOT / "dashboard.template.html"
 OUT = ROOT / "dashboard.html"
-PUBLIC_OUT = ROOT / "docs" / "index.html"
 LOCAL = tracker.PACIFIC
 CLOSED = {"submitted", "graded", "excused", "dropped"}
 
@@ -53,17 +51,13 @@ def local_parts(dt):
             "day": d.strftime("%b %-d"), "time": d.strftime("%-I:%M %p").lower()}
 
 
-def build(public=False, out=None):
-    """public=True drops every course not flagged `"public": true` in
-    courses.json. That build is served from a world-readable GitHub Pages site,
-    so the flag is opt-in per course and never inferred from the role."""
-    out = out or (PUBLIC_OUT if public else OUT)
+def build(out=None, write=True):
+    """Render every course. The web copy is encrypted by publish_web.py, so
+    there is no redacted variant to keep in step — that existed only while the
+    page was served as plaintext from GitHub Pages."""
+    out = out or OUT
     now = datetime.now(timezone.utc)
     config = json.loads((ROOT / "courses.json").read_text())
-    if public:
-        config = {s: m for s, m in config.items() if m.get("public") is True}
-        if not config:
-            raise SystemExit("no courses flagged public — refusing to build an empty public page")
     tracker = read_csv(ROOT / "tracker.csv")
     todos = read_csv(ROOT / "todos.csv")
 
@@ -160,17 +154,16 @@ def build(public=False, out=None):
     leftover = re.findall(r"\{\{[A-Z_]+\}\}", html)
     if leftover:
         raise SystemExit(f"unfilled template tokens: {sorted(set(leftover))}")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(html)
-    print(f"wrote {out} ({len(html):,} bytes){' [public]' if public else ''}")
+    if write:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(html)
+        print(f"wrote {out} ({len(html):,} bytes)")
     print(f"  {len(courses)} courses, {len(items)} tracked items, {len(todo_list)} todos")
     for c in courses:
         cur = next((m['name'] for m in c['modules'] if m['state'] == 'current'), '—')
         print(f"  {c['code']:<18} {c['role']:<8} open={c['open_count']:<3} current: {cur}")
+    return payload
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--public", action="store_true",
-                    help="build the redacted page for GitHub Pages")
-    build(public=ap.parse_args().public)
+    build()
