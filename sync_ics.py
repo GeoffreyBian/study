@@ -84,6 +84,33 @@ def load_course_map():
     return out
 
 
+def label_for(due):
+    """'2026-09-15T19:30:00Z' -> 'Sep 15', in his timezone, not UTC."""
+    from datetime import datetime, timezone
+    if "T" in due:
+        dt = datetime.strptime(due, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        dt = dt.astimezone(tracker.PACIFIC)
+    else:
+        dt = datetime.strptime(due, "%Y-%m-%d")
+    return f"{dt:%b} {dt.day}"
+
+
+def disambiguate(rows):
+    """Keep same-named events on the same course from collapsing into one row.
+
+    The feed names every CPEN 416 quiz 'CPEN 416 Quiz', so ten separate dates
+    hash to one key and each sync overwrites the last. Rows are keyed on
+    course + title, so repeated titles get their date appended. Titles that
+    appear once are left exactly as they are.
+    """
+    from collections import Counter
+    seen = Counter(tracker.key(r["course"], r["title"]) for r in rows)
+    for r in rows:
+        if seen[tracker.key(r["course"], r["title"])] > 1 and r.get("due"):
+            r["title"] = f'{tracker.clean_title(r["title"])} ({label_for(r["due"])})'
+    return rows
+
+
 def main():
     ics = urllib.request.urlopen(feed_url(), timeout=30).read().decode("utf-8")
     course_map = load_course_map()
@@ -109,6 +136,8 @@ def main():
                     else "assignment",
             "due": to_iso(ev["DTSTART"], ev.get("_all_day", False)),
         })
+
+    rows = disambiguate(rows)
 
     # The API is more precise than the feed: it gives a real timestamp where an
     # all-day VEVENT gives only a date. Once ingest.py has stamped a row with a
