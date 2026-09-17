@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import tracker
+from tracker import DONE_TODO
 
 ROOT = Path(__file__).parent
 TEMPLATE = ROOT / "dashboard.template.html"
@@ -82,6 +83,9 @@ def build(out=None, write=True):
             "type": r.get("type", "assignment"),
             "points": r.get("points", ""), "url": r.get("url", ""),
             "status": status, "open": status not in CLOSED,
+            # Mirrors the todo `done` flag so the page can seed its ticks from
+            # the CSV rather than only from the browser that did the ticking.
+            "done": status in CLOSED,
             "days": days, "overdue": bool(due and due < now and status not in CLOSED),
             **local_parts(due),
         })
@@ -93,6 +97,11 @@ def build(out=None, write=True):
         todo_list.append({
             "id": slug(f"{t['course']}-{t['title']}"),
             "course": parent(t.get("course", "")), "title": t["title"],
+            # Done-ness has to travel in the payload, not just in the browser
+            # that did the ticking. ticks.py writes it here; the page seeds its
+            # tick state from it so a checked box survives a new browser, a
+            # rebuild, and anything that reads the CSV instead of the page.
+            "done": (t.get("status") or "").strip().lower() in DONE_TODO,
             "priority": (t.get("priority") or "med").lower(),
             "notes": t.get("notes", ""),
             "days": (due - now).days if due else None,

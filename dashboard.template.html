@@ -220,8 +220,16 @@ let ticks = {}, db = null, render = () => {};
 const STORE = "school.ticks.v1";
 
 function loadLocal() {
-  try { ticks = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; }
-  catch (e) { ticks = {}; }        // private window, blocked storage: start empty
+  // The CSVs are the floor: anything ticks.py has already closed starts
+  // checked in every browser, not just the one that clicked it. localStorage
+  // then layers this session's clicks on top, and db overrides both.
+  const fromData = {};
+  (D.todos || []).forEach(t => { if (t.done) fromData[t.id] = true; });
+  (D.items || []).forEach(i => { if (i.done) fromData[i.id] = true; });
+  try {
+    ticks = Object.assign(fromData,
+      JSON.parse(localStorage.getItem(STORE) || "{}") || {});
+  } catch (e) { ticks = fromData; }   // blocked storage: still honour the CSVs
 }
 function saveLocal() {
   try { localStorage.setItem(STORE, JSON.stringify(ticks)); } catch (e) {}

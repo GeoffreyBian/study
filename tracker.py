@@ -22,6 +22,12 @@ TRACKER = ROOT / "tracker.csv"
 # carries identical rules and is correct. The check below fails the import
 # rather than let a bad tzdata quietly reintroduce the off-by-an-hour.
 PACIFIC = ZoneInfo("America/Los_Angeles")
+
+# What counts as closed, shared so due.py, build_dashboard.py and ticks.py
+# cannot drift apart on the question.
+DONE_TRACKER = {"submitted", "graded", "excused", "dropped"}
+DONE_TODO = {"done", "submitted", "dropped"}
+
 _winter = datetime(2027, 1, 24, 7, 59, tzinfo=timezone.utc).astimezone(PACIFIC)
 if (_winter.month, _winter.day, _winter.hour) != (1, 23, 23):
     raise RuntimeError(
