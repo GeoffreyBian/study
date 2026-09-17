@@ -21,11 +21,13 @@ import csv
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).parent
 TRACKER = ROOT / "tracker.csv"
 TODOS = ROOT / "todos.csv"
+ARCHIVE = ROOT / "todos_done.csv"
 
 # What each file calls "done". tracker.csv mirrors Canvas vocabulary; todos.csv
 # is ours. due.py treats the tracker set as closed and skips those rows.
@@ -85,6 +87,39 @@ def apply(ids, undo=False):
     return hit, miss
 
 
+def retire():
+    """Move finished todos out of the working list into todos_done.csv.
+
+    A todo is a thing to do next, so a completed one is clutter on the board
+    rather than a record. Tracker rows are left alone: those mirror Canvas and
+    the closed ones still carry points and a grade worth keeping in place.
+    """
+    rows, cols = read(TODOS)
+    if not rows:
+        return 0
+    done = [r for r in rows
+            if (r.get("status") or "").strip().lower() in
+            {"done", "submitted", "dropped"}]
+    if not done:
+        print("todos.csv: nothing to retire")
+        return 0
+    keep = [r for r in rows if r not in done]
+
+    old, acols = read(ARCHIVE)
+    acols = acols or cols + ["retired"]
+    if "retired" not in acols:
+        acols = acols + ["retired"]
+    stamp = datetime.now().date().isoformat()
+    for r in done:
+        r["retired"] = stamp
+    write(ARCHIVE, old + done, acols)
+    write(TODOS, keep, cols)
+    print(f"todos.csv: retired {len(done)} -> {ARCHIVE.name}, {len(keep)} still open")
+    for r in done:
+        print(f"    {(r.get('title') or '')[:64]}")
+    return len(done)
+
+
 def show():
     for path, done_val in ((TRACKER, TRACKER_DONE), (TODOS, TODO_DONE)):
         rows, _ = read(path)
@@ -104,10 +139,16 @@ def main():
     ap.add_argument("--json", help="a file of {id: bool} as the page stores it")
     ap.add_argument("--undo", action="store_true", help="reopen instead of closing")
     ap.add_argument("--list", action="store_true", help="show what is marked done")
+    ap.add_argument("--retire", action="store_true",
+                    help="move finished todos into todos_done.csv")
     a = ap.parse_args()
 
     if a.list:
         show()
+        return
+
+    if a.retire and not (a.ids or a.json):
+        retire()
         return
 
     ids = set()
@@ -121,6 +162,9 @@ def main():
 
     hit, miss = apply(ids, a.undo)
     print(f"\nmatched {len(hit)}, unmatched {len(miss)}")
+    if a.retire:
+        print()
+        retire()
     if hit:
         print("Rebuild and republish so the page ships with these already done:")
         print("  ~/dev/school/publish.sh")
