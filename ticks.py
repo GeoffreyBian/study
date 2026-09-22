@@ -174,7 +174,7 @@ def show():
         rows, _ = read(path)
         marked = [r for r in rows
                   if (r.get("status") or "").strip().lower()
-                  in {"submitted", "graded", "excused", "dropped", "done"}]
+                  in CLOSED_STATES | {"done"}]
         print(f"\n{path.name}: {len(marked)} of {len(rows)} marked done")
         for r in marked:
             print(f"  [{r.get('status'):<10}] {r.get('course',''):<20} "
