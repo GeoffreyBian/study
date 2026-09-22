@@ -9,7 +9,7 @@ from pathlib import Path
 import tracker as _t
 
 TRACKER = Path(__file__).parent / "tracker.csv"
-DONE = {"submitted", "graded", "excused", "dropped"}
+DONE = _t.DONE_TRACKER
 
 
 def parse_due(raw):

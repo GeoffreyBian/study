@@ -25,7 +25,10 @@ PACIFIC = ZoneInfo("America/Los_Angeles")
 
 # What counts as closed, shared so due.py, build_dashboard.py and ticks.py
 # cannot drift apart on the question.
-DONE_TRACKER = {"submitted", "graded", "excused", "dropped"}
+DONE_TRACKER = {"submitted", "graded", "excused", "dropped", "assumed-submitted"}
+# "assumed-submitted" means nobody confirmed it, we inferred it from the due
+# date passing. Canvas's ICS feed carries no submission state, so an open row
+# past its deadline is far more often already handed in than genuinely missed.
 DONE_TODO = {"done", "submitted", "dropped"}
 
 _winter = datetime(2027, 1, 24, 7, 59, tzinfo=timezone.utc).astimezone(PACIFIC)

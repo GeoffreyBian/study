@@ -21,7 +21,7 @@ import csv
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -33,6 +33,21 @@ ARCHIVE = ROOT / "todos_done.csv"
 # is ours. due.py treats the tracker set as closed and skips those rows.
 TRACKER_DONE = "submitted"
 TODO_DONE = "done"
+CLOSED_STATES = {"submitted", "graded", "excused", "dropped", "assumed-submitted"}
+
+
+def _parse_due(raw):
+    """Same parsing due.py uses: bare dates mean end of day, UTC."""
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        if len(raw) == 10:
+            return datetime.fromisoformat(raw).replace(
+                hour=23, minute=59, tzinfo=timezone.utc)
+        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def slug(s):
@@ -120,6 +135,40 @@ def retire():
     return len(done)
 
 
+def close_overdue(grace=0, dry=False):
+    """Close tracker rows whose deadline has passed, as assumed-submitted.
+
+    Canvas's ICS feed carries no submission state, so `due.py` had no way to
+    tell "handed in" from "not ticked" and re-reported the same items every
+    day. He asked on 2026-09-22 to stop being reminded, on the grounds that a
+    passed deadline almost always means he did the thing.
+
+    So the default flips: past due means done unless he says otherwise. The
+    status is recorded as "assumed-submitted" rather than "submitted" so the
+    inference stays visible and reversible with --undo.
+    """
+    rows, cols = read(TRACKER)
+    if not rows:
+        return []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=grace)
+    closed = []
+    for r in rows:
+        if (r.get("status") or "").strip().lower() in CLOSED_STATES:
+            continue
+        due = _parse_due(r.get("due"))
+        if due and due < cutoff:
+            if not dry:
+                r["status"] = "assumed-submitted"
+            closed.append(r)
+    if closed and not dry:
+        write(TRACKER, rows, cols)
+    verb = "would close" if dry else "closed"
+    print(f"tracker.csv: {verb} {len(closed)} past-due row(s) as assumed-submitted")
+    for r in closed:
+        print(f"    {r.get('course',''):<20} {(r.get('title') or '')[:58]}")
+    return closed
+
+
 def show():
     for path, done_val in ((TRACKER, TRACKER_DONE), (TODOS, TODO_DONE)):
         rows, _ = read(path)
@@ -141,10 +190,23 @@ def main():
     ap.add_argument("--list", action="store_true", help="show what is marked done")
     ap.add_argument("--retire", action="store_true",
                     help="move finished todos into todos_done.csv")
+    ap.add_argument("--close-overdue", action="store_true",
+                    help="close past-due tracker rows as assumed-submitted")
+    ap.add_argument("--grace", type=int, default=0,
+                    help="days past the deadline before closing (default 0)")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="show what --close-overdue would do, change nothing")
     a = ap.parse_args()
 
     if a.list:
         show()
+        return
+
+    if getattr(a, "close_overdue", False) and not (a.ids or a.json):
+        close_overdue(grace=a.grace, dry=a.dry_run)
+        if a.retire:
+            print()
+            retire()
         return
 
     if a.retire and not (a.ids or a.json):
