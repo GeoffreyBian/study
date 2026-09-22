@@ -12,6 +12,15 @@ sources instead:
 - **`ingest.py`** — Canvas's REST API answers normally to a logged-in browser
   session, which fills in points, submission status and scores.
 
+Course *material* often isn't on Canvas at all:
+
+- **`piazza_fetch.js`** + **`piazza.py`** — the Piazza resources page has no
+  API, so the browser half scrapes the listing, packs every new resource into
+  one zip (Chrome allows a page only one automatic download per tab), and the
+  local half unpacks it into `courses/<slug>/` and extracts the text.
+- **`slidetext.py`** — slide text and speaker notes out of a `.pptx`, or text
+  out of a `.pdf`, into a `.txt` sidecar.
+
 `build_dashboard.py` renders `tracker.csv` + `todos.csv` + `courses.json` into
 the page: an overview with the next deadlines and a to-do list, plus a page per
 course showing what's currently being covered.
