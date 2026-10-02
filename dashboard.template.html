@@ -108,6 +108,14 @@ ul.todo li.done .tx{text-decoration:line-through;color:var(--muted)}
 .pri.med{background:var(--sunk);color:var(--muted)}
 .pri.low{background:var(--sunk);color:var(--muted)}
 .tag{font-family:var(--mono);font-size:10.5px;color:var(--muted);flex:none;margin-top:3px}
+/* study resources */
+.reslist{display:flex;flex-direction:column;gap:10px}
+a.res{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+a.res:hover{border-color:var(--accent)}
+a.res .rt{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--accent)}
+a.res .rn{font-size:13.5px;color:var(--ink-2);margin-top:4px}
+a.res .rl{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:7px}
 /* course cards */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:18px;
@@ -386,6 +394,16 @@ function coursePage(c) {
     ${c.weights_published === false ? `<p class="hint">Canvas shows every assignment group at
       weight 0, so the real grading breakdown is only in the syllabus PDF. A 0-point item here is
       participation or ungraded, not worthless.</p>` : ""}
+  </section>` : ""}
+
+  ${(c.resources || []).length ? `<section>
+    <div class="lbl">Study resources</div>
+    <div class="reslist">${c.resources.map(r => `
+      <a class="res" href="${esc(r.url)}" target="_blank" rel="noopener">
+        <div class="rt">${esc(r.label)}</div>
+        ${r.note ? `<div class="rn">${esc(r.note)}</div>` : ""}
+        <div class="rl">Opens in a new tab &middot; private to you</div>
+      </a>`).join("")}</div>
   </section>` : ""}
 
   <section>

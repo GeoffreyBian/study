@@ -139,6 +139,7 @@ def build(out=None, write=True):
             "slug": s, "name": meta["name"], "code": meta["code"],
             "role": meta["role"], "term": meta.get("term", ""),
             "staff": meta.get("staff", []),
+            "resources": meta.get("resources", []),
             "sections": [{"label": lbl or "—", "id": cid,
                           "students": (meta.get("students") or {}).get(cid)}
                          for cid, lbl in meta.get("canvas", {}).items()],
